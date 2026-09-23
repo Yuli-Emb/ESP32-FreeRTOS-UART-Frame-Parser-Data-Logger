@@ -2,8 +2,10 @@
 #define RING_BUFFER_H
 #include <stdint.h>
 
+#define RING_BUFFER_SIZE 256
+
 typedef struct{
-    uint8_t buf[256];
+    uint8_t buf[RING_BUFFER_SIZE];
     volatile uint32_t head;
     volatile uint32_t tail;
     volatile uint8_t overrun;

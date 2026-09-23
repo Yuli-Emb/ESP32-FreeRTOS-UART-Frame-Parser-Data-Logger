@@ -50,8 +50,20 @@ void vReaderTask (void *pvParameters){ // reader task
                     break;
 
                 case READ_DLC: // data length
-                    frame.dlc = byte;
-                    state = READ_DATA;
+                    if (byte <= 8) {
+                        frame.dlc = byte;
+                        byte_count = 0;
+                        if (frame.dlc == 0) {
+                            state = READ_CRC;
+                        }
+                        else {
+                            state = READ_DATA;
+                        }
+                    }
+                    else {
+                        state = WAIT_SOF;
+                        byte_count = 0;
+                    }
                     break;
             
                 case READ_DATA: // read data 
@@ -73,6 +85,7 @@ void vReaderTask (void *pvParameters){ // reader task
                     }
                     break;
             }
+            frame.timestamp = xTaskGetTickCount();
         }
     }
 }
@@ -82,7 +95,7 @@ void vLoggerTask(void *pvParameters) { // Logs
     while(1){
         xQueueReceive(xQueue, &frame, portMAX_DELAY);
         Serial.print("\n>> Frame\n"); // Output frame contents
-        Serial.printf("[%lu ms] | ID:0x%03X | DLC:%d \n", xTaskGetTickCount(), frame.id, frame.dlc);
+        Serial.printf("[%lu ms] | ID:0x%03X | DLC:%d \n", frame.timestamp, frame.id, frame.dlc);
         Serial.printf("DATA: ");
         for (int i = 0; i < frame.dlc; i++) {
             Serial.printf("%02X ", frame.data[i]);

@@ -1,4 +1,4 @@
-# CAN bus data logger & Task scheduler
+# ESP32 FreeRTOS Embedded Frame Parser & Data Logger
 
 ESP32 firmware project demonstrating FreeRTOS task scheduling, CAN frame assembly and inter-task communication using queues
 
