@@ -14,7 +14,7 @@ typedef enum {
 typedef struct {
     uint32_t id;
     uint8_t dlc;
-    uint8_t data[8];
+    uint8_t data[MAX_FRAME_SIZE];
     uint32_t timestamp;
 } CAN_frame_t;
 

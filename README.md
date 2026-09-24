@@ -39,7 +39,7 @@ This project was created to gain practical knowledge on CAN bus basics. Were use
 
 ## Hardware
 
-Microcontroller ESP32, it's GPIO 16 and 17 were connected to each other to simulate UART data exchange.
+For this project was used microcontroller ESP32, it's GPIO 16 and 17 were connected to each other to provide UART TX/RX loopback on the board.
 
 ---
 

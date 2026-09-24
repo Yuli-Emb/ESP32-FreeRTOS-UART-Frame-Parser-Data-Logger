@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #define RING_BUFFER_SIZE 256
+#define MAX_FRAME_SIZE 8
 
 typedef struct{
     uint8_t buf[RING_BUFFER_SIZE];

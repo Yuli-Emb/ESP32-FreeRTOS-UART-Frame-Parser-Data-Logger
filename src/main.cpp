@@ -3,6 +3,9 @@
 #include "ring_buffer.h"
 #include "can_frame.h"
 
+#define UART_BAUD_RATE 115200
+#define QUEUE_SIZE 5
+
 SemaphoreHandle_t xSemaphore; // Declares semaphore
 QueueHandle_t xQueue; // Holds reference to a queue. Declares a variable
 Ring_Buffer rb;
@@ -50,7 +53,7 @@ void vReaderTask (void *pvParameters){ // reader task
                     break;
 
                 case READ_DLC: // data length
-                    if (byte <= 8) {
+                    if (byte <= MAX_FRAME_SIZE) {
                         frame.dlc = byte;
                         byte_count = 0;
                         if (frame.dlc == 0) {
@@ -124,17 +127,17 @@ void vStatsTask(void *pvParameters) { // Statistics
 }
 
 void setup() {
-    Serial.begin(115200); // Baud - symbols per second
+    Serial.begin(UART_BAUD_RATE); // Baud - symbols per second
     
 
-    Serial2.begin(115200); // 
+    Serial2.begin(UART_BAUD_RATE); // 
     Serial2.onReceive(myISR); // call this function when something happens
 
     xSemaphore = xSemaphoreCreateBinary();
 
     memset(&rb, 0, sizeof(Ring_Buffer));
 
-    xQueue = xQueueCreate(5, sizeof(CAN_frame_t));
+    xQueue = xQueueCreate(QUEUE_SIZE, sizeof(CAN_frame_t));
     // 5 - how many iterms the queue can hold at once
     // sizeof - size of each item in bytes
 
