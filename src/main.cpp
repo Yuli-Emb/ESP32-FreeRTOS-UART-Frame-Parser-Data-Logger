@@ -2,6 +2,8 @@
 #include <string.h>
 #include "ring_buffer.h"
 #include "can_frame.h"
+#include "crc.h"
+#include "test_frames.h"
 
 #define UART_BAUD_RATE 115200
 #define QUEUE_SIZE 5
@@ -12,6 +14,7 @@ Ring_Buffer rb;
 
 volatile uint32_t frames_received = 0;
 volatile uint32_t frames_dropped = 0;
+volatile uint32_t crc_errors = 0;
 
 void myISR() {
     while (Serial2.available()) {
@@ -77,18 +80,29 @@ void vReaderTask (void *pvParameters){ // reader task
                     }
                     break;
 
-                case READ_CRC: // send frame to queue and reset variables
+                case READ_CRC:
+                    uint8_t received_crc = byte;
+                    uint8_t calc_crc = calculateFrameCRC(static_cast<uint16_t>(frame.id), frame.dlc, frame.data);
+
                     state = WAIT_SOF;
                     byte_count = 0;
-                    if (xQueueSend(xQueue, &frame, 0) == pdTRUE) {
-                        frames_received++;
-                    } 
-                    else {
-                        frames_dropped++;
+
+                    if (received_crc == calc_crc) {
+                        frame.timestamp = pdTICKS_TO_MS(xTaskGetTickCount());
+                        if (xQueueSend(xQueue, &frame, 0) == pdTRUE) {
+                            frames_received++;
+                        } 
+                        else {
+                            frames_dropped++;
+                        }
                     }
+
+                    else {
+                        crc_errors++;
+                    }
+                    
                     break;
             }
-            frame.timestamp = xTaskGetTickCount();
         }
     }
 }
@@ -98,7 +112,7 @@ void vLoggerTask(void *pvParameters) { // Logs
     while(1){
         xQueueReceive(xQueue, &frame, portMAX_DELAY);
         Serial.print("\n>> Frame\n"); // Output frame contents
-        Serial.printf("[%lu ms] | ID:0x%03X | DLC:%d \n", frame.timestamp, frame.id, frame.dlc);
+        Serial.printf("[%lu ms] | ID:0x%03X | DLC:%d\n", frame.timestamp, frame.id, frame.dlc);
         Serial.printf("DATA: ");
         for (int i = 0; i < frame.dlc; i++) {
             Serial.printf("%02X ", frame.data[i]);
@@ -110,17 +124,24 @@ void vLoggerTask(void *pvParameters) { // Logs
 
 void vSimulatorTask(void *pvParameters) { // Frame Simulation
     vTaskDelay(pdMS_TO_TICKS(200));
+    int flag = 0;
     while(1){
-        uint8_t frame[] = {0xAA, 0x07, 0xE8, 0x03, 0xAD, 0xDE, 0xEB, 0x00}; // Create frame
-        Serial2.write(frame, sizeof(frame)); // Send
-        vTaskDelay(pdMS_TO_TICKS(100)); // Delay
+        if (flag == 0) {
+            Valid_Frame();
+            flag = 1;
+        }
+        else {
+            Corrupt_Frame();
+            flag = 0;
+        }
+        vTaskDelay(pdMS_TO_TICKS(2500)); // Delay
     }
 }
 
 void vStatsTask(void *pvParameters) { // Statistics
     vTaskDelay(pdMS_TO_TICKS(200));
     while(1){
-        Serial.printf("\n>> STATS\nReceived: %lu\nDropped: %lu\nQueue depth: %u\n", frames_received, frames_dropped, uxQueueMessagesWaiting(xQueue)); // Outputs statistics
+        Serial.printf("\n>> STATS\nReceived: %lu\nDropped: %lu\nQueue depth: %u\nCRC Errors: %u\n", frames_received, frames_dropped, uxQueueMessagesWaiting(xQueue), crc_errors); // Outputs statistics
         Serial.printf("Overrun: %d\n", rb.overrun);
         vTaskDelay(pdMS_TO_TICKS(5000));
     }

@@ -22,6 +22,10 @@ uint8_t calculateCRC8(const uint8_t* data, size_t length)
 
 uint8_t calculateFrameCRC(uint16_t id, uint8_t dlc, const uint8_t* data)
 {
+    if (dlc > 8) {
+        return 0;
+    }
+    
     uint8_t bytes[3 + 8];
 
     bytes[0] = (id >> 8) & 0xFF;
