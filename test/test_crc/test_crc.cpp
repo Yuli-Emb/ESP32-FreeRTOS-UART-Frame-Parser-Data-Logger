@@ -24,6 +24,18 @@ void crc_test_diff () { // Test if different data arrays give different results
     TEST_ASSERT_NOT_EQUAL(calculateCRC8(data, sizeof(data)), calculateCRC8(data_diff, sizeof(data)));
 }
 
+void crc_test_empty () { // Test if empty array of data returns initial CRC value 0x00
+    const uint8_t data [] = {};
+
+    TEST_ASSERT_EQUAL_HEX8(calculateCRC8(data, sizeof(data)), 0x00);
+}
+
+void crc_test_known () { // Test if predeterminate data array produces correct result 
+    const uint8_t data [] = {0x12, 0x34, 0x3, 0xDE, 0xAD, 0xBE};
+
+    TEST_ASSERT_EQUAL_HEX8(calculateCRC8(data, sizeof(data)), 0xEE);
+}
+
 void setup() {
     delay(2000);
 
@@ -32,6 +44,8 @@ void setup() {
     RUN_TEST(crc_test_data);
     RUN_TEST(crc_test_same);
     RUN_TEST(crc_test_diff);
+    RUN_TEST(crc_test_empty);
+    RUN_TEST(crc_test_known);
 
     UNITY_END();
 }
