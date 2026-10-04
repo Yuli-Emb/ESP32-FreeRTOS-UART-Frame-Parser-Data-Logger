@@ -2,20 +2,53 @@
 #include <unity.h>
 #include "ring_buffer.h"
 
-void rb_test_empty() {
+static Ring_Buffer rb;
+
+void rb_test_empty() { // Read from empty buffer
+    uint8_t byte = 0xFF;
+    
+    TEST_ASSERT_EQUAL_UINT8(1, rb_read(&rb, &byte));
+}
+
+void rb_test_one_wr () { // Write 1 byte and read it
+    uint8_t byte = 0;
+
+    TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, 0xBE));
+    TEST_ASSERT_EQUAL_UINT32(1, rb_available(&rb));
+
+    TEST_ASSERT_EQUAL_UINT8(0, rb_read(&rb, &byte));
+    TEST_ASSERT_EQUAL_UINT8(0xBE, byte);
+    TEST_ASSERT_EQUAL_UINT32(0, rb_available(&rb));
 
 }
 
-void rb_test_one_wr () {
+void rb_test_multiple_wr () { // Write multiple bytes and read them (FIFO)
+    uint8_t bytes[] = {0xDE, 0xAD, 0xBE, 0xEF};
+    size_t len = sizeof(bytes);
+    uint8_t byte = 0;
 
-}
+    for (int i = 0; i < len; i++){
+        TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, bytes[i]));
+    }
 
-void rb_test_multiple_wr () {
+    TEST_ASSERT_EQUAL_UINT32(len, rb_available(&rb));
 
-}
+    for (int i = 0; i < len; i++) {
+        TEST_ASSERT_EQUAL_UINT8(0, rb_read(&rb, &byte));
+        TEST_ASSERT_EQUAL_UINT8(bytes[i], byte);
+    }
 
-void rb_test_full () {
+    TEST_ASSERT_EQUAL_UINT32(0, rb_available(&rb));
+}   
 
+void rb_test_full () { // Full ring buffer
+    uint8_t max = RING_BUFFER_SIZE;
+    for (int i = 0; i < max - 1; i++) {
+        TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, (uint8_t) i));
+    }
+
+    TEST_ASSERT_EQUAL_UINT32(max, rb_available(&rb));
+    TEST_ASSERT_EQUAL_UINT8(0, rb.overrun);
 }
 
 void rb_test_wrap () {
@@ -28,9 +61,11 @@ void rb_test_stress () {
 
 void setup() {
     delay(2000);
-
     UNITY_BEGIN();
-
+    RUN_TEST(rb_test_empty);
+    RUN_TEST(rb_test_one_wr);
+    RUN_TEST(rb_test_multiple_wr);
+    RUN_TEST(rb_test_full);
     UNITY_END();
 }
 
