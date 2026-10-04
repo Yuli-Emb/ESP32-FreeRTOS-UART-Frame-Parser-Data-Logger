@@ -8,6 +8,16 @@ Incoming bytes are captured through a UART receive callback, buffered using a si
 
 ## Key Features
 
+- UART receive handling using ESP32 UART2
+- Interrupt/callback-driven byte reception
+- Single-producer/single-consumer ring buffer
+- State-machine based frame parser
+- CRC frame validation
+- FreeRTOS task-based architecture
+- FreeRTOS queues and synchronization primitives
+- Frame statistics and error/overrun tracking
+- Unit tests for ring buffer, CRC, and frame parsing
+
 ## Architecture overview
 
 ![Architecture](img/diagram.png)
@@ -16,7 +26,25 @@ Incoming bytes are captured through a UART receive callback, buffered using a si
 
 ## Protocol
 
+CAN inspired frame structure:
 
+| SOF | ID | DLC | DATA | CRC |
+| --- | --- | --- | ---| --- |
+| 0xAA | 2 bytes | 1 byte | 0-8 bytes | 1 byte |
+
+What each field responsible for:
+
+| Field | Size | Description |
+| --- | --- | --- |
+| SOF | 1 byte | Marks start of each frame |
+| --- | --- | --- |
+| ID | 2 bytes | Frame identifier |
+| --- | --- | --- |
+| DLC | 1 byte | Number of data bytes |
+| --- | --- | --- |
+| DATA | 0 to 8 bytes | Payload |
+| --- | --- | --- |
+| CRC | 1 byte | CRC-8 checksum |
 
 ## Hardware
 
