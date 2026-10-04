@@ -37,13 +37,9 @@ What each field responsible for:
 | Field | Size | Description |
 | --- | --- | --- |
 | SOF | 1 byte | Marks start of each frame |
-| --- | --- | --- |
 | ID | 2 bytes | Frame identifier |
-| --- | --- | --- |
 | DLC | 1 byte | Number of data bytes |
-| --- | --- | --- |
 | DATA | 0 to 8 bytes | Payload |
-| --- | --- | --- |
 | CRC | 1 byte | CRC-8 checksum |
 
 ## Hardware
