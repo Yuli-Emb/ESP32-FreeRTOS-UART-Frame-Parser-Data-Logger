@@ -44,13 +44,19 @@ What each field responsible for:
 
 ## Hardware
 
-For this project was used microcontroller ESP32, it's GPIO 16 and 17 were connected to each other to provide UART TX/RX loopback on the board.
+Components used for this project:
+
+- ESP32 development board
+- UART2
+- GPIO 16 — RX
+- GPIO 17 — TX
+- UART loopback connection
+
+Important: The project uses UART loopback to simulate reception of a CAN-like frame protocol. It does not use a physical CAN controller or CAN transceiver.
 
 ---
 
 ## How to build and flash
-
-
 
 ---
 
