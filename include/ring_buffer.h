@@ -9,7 +9,7 @@ typedef struct{
     uint8_t buf[RING_BUFFER_SIZE];
     volatile uint32_t head;
     volatile uint32_t tail;
-    volatile uint8_t overrun;
+    volatile uint32_t overrun;
 } Ring_Buffer; 
 
 uint8_t rb_write(Ring_Buffer *rb, uint8_t byte);

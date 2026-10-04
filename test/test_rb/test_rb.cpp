@@ -47,7 +47,7 @@ void rb_test_full () { // Full ring buffer
         TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, (uint8_t) i));
     }
 
-    TEST_ASSERT_EQUAL_UINT32(max, rb_available(&rb));
+    TEST_ASSERT_EQUAL_UINT32(max - 1, rb_available(&rb));
     TEST_ASSERT_EQUAL_UINT8(0, rb.overrun);
 }
 

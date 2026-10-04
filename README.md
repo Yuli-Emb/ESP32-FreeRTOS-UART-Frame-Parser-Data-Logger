@@ -1,41 +1,22 @@
 # ESP32 FreeRTOS Embedded Frame Parser & Data Logger
 
-ESP32 firmware project demonstrating FreeRTOS task scheduling, CAN frame assembly and inter-task communication using queues
+Real-time ESP32 firmware implementing a FreeRTOS-based UART frame processing pipeline. 
 
-This project was created to gain practical knowledge on CAN bus basics. Were used such concepts as FreeRTOS, ISR, Semaphores, Queues, Ring buffers etc.
+Incoming bytes are captured through a UART receive callback, buffered using a single-producer/single-consumer ring buffer, parsed using a state machine, validated with CRC-8, and passed between tasks using FreeRTOS queues and semaphores.
 
 ---
+
+## Key Features
 
 ## Architecture overview
 
--> Simulator task sends bytes using Serial2.write (TX -> RX)
-
--> ISR fires, drains buffer into ring buffer
-
--> Signals semaphore
-
--> Reader task wakes up and assembles frames using switch-case structure, which saves data to it's designated variables
-
--> Reader task sends frame to queue and resets variables
-
--> Logger task prints out information about frame
-
--> Stats task prints out overall information including amount of received frames, dropped frames, overall queue depth and overrun.
+![Architecture](img/diagram.png)
 
 ---
 
-## Components
-| Component | Description |
-|---|---|
-|myISR | Interrupt Service Routine, drains Serial2 buffer into ring buffer, signals semaphore to wake reader task |
-|ring_buffer | lock-free single-producer single-consumer byte buffer. Written by ISR, read by reader task |
-|vReaderTask | main reader task, used for processing CAN frame step by step and saving data from them to variables |
-|vLoggerTask | used for logging, outputs time and contents of a frame such as ID, DLC and Data |
-|vSimulatorTask | simulates creation of data frame and sends it to Serial2 |
-|vStatsTask | displays heath of the system: how many frames were received, dropped, total queue depth and overrun |
-|setup | regular setup function, creates tasks pinned to core, starts serial and serial2, sets memory |
+## Protocol
 
----
+
 
 ## Hardware
 
@@ -45,17 +26,7 @@ For this project was used microcontroller ESP32, it's GPIO 16 and 17 were connec
 
 ## How to build and flash
 
-1. Create an empty project with ESP32 selected.
 
-2. Upload or create main.cpp, can_frame.h, ring_buffer.cpp, ring_buffer.h
-
-3. Make sure platformio.ini contains framework = arduino and board = esp32dev
-
-4. Connect GPIO 16 and 17 on your ESP32 with a wire
-
-5. Connect ESP32 to your device
-
-6. Press PlatformIO: Build, an arrow facing right in the bottom of your screen.
 
 ---
 
