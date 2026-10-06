@@ -52,11 +52,51 @@ void rb_test_full () { // Full ring buffer
 }
 
 void rb_test_wrap () {
-    
+    uint8_t read_byte = 0;
+
+    rb.head = RING_BUFFER_SIZE - 2;
+    rb.tail = RING_BUFFER_SIZE - 2;
+
+    TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, 0xA1)); // 254
+    TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, 0xA2)); // 255
+    TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, 0xA3)); // Wrapped to 0
+    TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, 0xA4)); // Wrapped to 1
+
+    TEST_ASSERT_EQUAL_UINT32(4, rb_available(&rb));
+
+    TEST_ASSERT_EQUAL_UINT8(0, rb_read(&rb, &read_byte));
+    TEST_ASSERT_EQUAL_UINT8(0xA1, read_byte);
+
+    TEST_ASSERT_EQUAL_UINT8(0, rb_read(&rb, &read_byte));
+    TEST_ASSERT_EQUAL_UINT8(0xA2, read_byte);
+
+    TEST_ASSERT_EQUAL_UINT8(0, rb_read(&rb, &read_byte));
+    TEST_ASSERT_EQUAL_UINT8(0xA3, read_byte);
+
+    TEST_ASSERT_EQUAL_UINT8(0, rb_read(&rb, &read_byte));
+    TEST_ASSERT_EQUAL_UINT8(0xA4, read_byte);
+
+    TEST_ASSERT_EQUAL_UINT32(0, rb_available(&rb));    
 }
 
 void rb_test_stress () {
+    uint8_t read_byte = 0;
+    for (uint32_t cycle = 0; cycle < 1000; cycle++) {
+        uint8_t val1 = (uint8_t)(cycle & 0xFF);
+        uint8_t val2 = (uint8_t)((cycle + 1) & 0xFF);
 
+        TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, val1));
+        TEST_ASSERT_EQUAL_UINT8(0, rb_write(&rb, val2));
+
+        TEST_ASSERT_EQUAL_UINT8(0, rb_read(&rb, &read_byte));
+        TEST_ASSERT_EQUAL_UINT8(val1, read_byte);
+
+        TEST_ASSERT_EQUAL_UINT8(0, rb_read(&rb, &read_byte));
+        TEST_ASSERT_EQUAL_UINT8(val2, read_byte);
+    }
+
+    TEST_ASSERT_EQUAL_UINT32(0, rb_available(&rb));
+    TEST_ASSERT_EQUAL_UINT8(0, rb.overrun);
 }
 
 void setup() {
