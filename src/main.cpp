@@ -41,7 +41,7 @@ void vReaderTask(void *pvParameters)
 
         while (rb_available(&rb) != 0)
         {
-            if (!rb_read(&rb, &byte))
+            if (rb_read(&rb, &byte))
                 continue;
 
             if (frame_parser_feed(&parser, byte, &frame))
@@ -81,14 +81,14 @@ void vSimulatorTask(void *pvParameters) { // Frame Simulation
     vTaskDelay(pdMS_TO_TICKS(200));
     int flag = 0;
     while(1){
-        if (flag == 0) {
+        //if (flag == 0) {
             Valid_Frame();
-            flag = 1;
-        }
-        else {
-            Corrupt_Frame();
-            flag = 0;
-        }
+            //flag = 1;
+        //}
+        //else {
+            //Corrupt_Frame();
+            //flag = 0;
+        //}
         vTaskDelay(pdMS_TO_TICKS(2500)); // Delay
     }
 }
