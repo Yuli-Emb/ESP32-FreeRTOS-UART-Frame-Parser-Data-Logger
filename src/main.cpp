@@ -4,6 +4,7 @@
 #include "can_frame.h"
 #include "crc.h"
 #include "test_frames.h"
+#include "frame_parser.h"
 
 #define UART_BAUD_RATE 115200
 #define QUEUE_SIZE 5
@@ -14,7 +15,6 @@ Ring_Buffer rb;
 
 volatile uint32_t frames_received = 0;
 volatile uint32_t frames_dropped = 0;
-volatile uint32_t crc_errors = 0;
 
 void myISR() {
     while (Serial2.available()) {
@@ -26,82 +26,37 @@ void myISR() {
     portYIELD_FROM_ISR(higherPriorityWoken);
 }
 
-void vReaderTask (void *pvParameters){ // reader task
-    FrameState state = WAIT_SOF;
+
+void vReaderTask(void *pvParameters)
+{
+    FrameParser parser;
     CAN_frame_t frame;
-    uint8_t byte_count = 0;
     uint8_t byte;
 
-    vTaskDelay(pdMS_TO_TICKS(100));
-    
-    while (1){
+    frame_parser_init(&parser);
+
+    while (true)
+    {
         xSemaphoreTake(xSemaphore, portMAX_DELAY);
-        while (rb_available(&rb) != 0) {
-            rb_read(&rb, &byte);
-            switch(state){
-                case WAIT_SOF: // Waiting for 0xAA
-                    if (byte == 0xAA){
-                        state = READ_ID_H;
-                    }
-                    break;
-            
-                case READ_ID_H: // Read higher byte of ID
-                    frame.id = byte << 8;
-                    state = READ_ID_L;
-                    break;
-        
-                case READ_ID_L: // Read lower byte of ID
-                    frame.id |= byte;
-                    state = READ_DLC;
-                    break;
 
-                case READ_DLC: // data length
-                    if (byte <= MAX_FRAME_SIZE) {
-                        frame.dlc = byte;
-                        byte_count = 0;
-                        if (frame.dlc == 0) {
-                            state = READ_CRC;
-                        }
-                        else {
-                            state = READ_DATA;
-                        }
-                    }
-                    else {
-                        state = WAIT_SOF;
-                        byte_count = 0;
-                    }
-                    break;
-            
-                case READ_DATA: // read data 
-                    frame.data[byte_count] = byte;
-                    byte_count++;
-                    if (byte_count == frame.dlc) {
-                        state = READ_CRC;
-                    }
-                    break;
+        while (rb_available(&rb) != 0)
+        {
+            if (!rb_read(&rb, &byte))
+                continue;
 
-                case READ_CRC:
-                    uint8_t received_crc = byte;
-                    uint8_t calc_crc = calculateFrameCRC(static_cast<uint16_t>(frame.id), frame.dlc, frame.data);
+            if (frame_parser_feed(&parser, byte, &frame))
+            {
+                frame.timestamp =
+                    pdTICKS_TO_MS(xTaskGetTickCount());
 
-                    state = WAIT_SOF;
-                    byte_count = 0;
-
-                    if (received_crc == calc_crc) {
-                        frame.timestamp = pdTICKS_TO_MS(xTaskGetTickCount());
-                        if (xQueueSend(xQueue, &frame, 0) == pdTRUE) {
-                            frames_received++;
-                        } 
-                        else {
-                            frames_dropped++;
-                        }
-                    }
-
-                    else {
-                        crc_errors++;
-                    }
-                    
-                    break;
+                if (xQueueSend(xQueue, &frame, 0) == pdTRUE)
+                {
+                    frames_received++;
+                }
+                else
+                {
+                    frames_dropped++;
+                }
             }
         }
     }

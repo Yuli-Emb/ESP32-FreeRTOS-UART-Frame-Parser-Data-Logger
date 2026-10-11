@@ -56,10 +56,6 @@ Important: The project uses UART loopback to simulate reception of a CAN-like fr
 
 ---
 
-## How to build and flash
-
----
-
 ## Performance results
 
 | Interval | Frames/sec | Received | Dropped |
